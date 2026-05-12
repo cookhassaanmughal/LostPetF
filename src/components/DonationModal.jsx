@@ -265,9 +265,6 @@ export default function DonationModal({ isOpen, onClose, user }) {
                     </label>
                   </div>
 
-                    </p>
-                  )}
-
                   <div className="flex justify-center scale-90">
                     <ReCAPTCHA
                       sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}

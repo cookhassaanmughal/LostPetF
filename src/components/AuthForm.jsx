@@ -176,9 +176,6 @@ export default function AuthForm({ mode, onAuth }) {
             )}
           </div>
 
-            </div>
-          )}
-
           <div className="flex justify-center py-2">
             <ReCAPTCHA
               sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
