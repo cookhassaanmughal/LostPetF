@@ -3,12 +3,14 @@ import { loginUser, registerUser } from '../api';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, User as UserIcon, ArrowRight, Loader2, Info } from 'lucide-react';
 import { motion } from 'framer-motion';
+import ReCAPTCHA from 'react-google-recaptcha';
 
 export default function AuthForm({ mode, onAuth }) {
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [recaptchaToken, setRecaptchaToken] = useState(null);
   const navigate = useNavigate();
 
   const [errors, setErrors] = useState({});
@@ -44,10 +46,16 @@ export default function AuthForm({ mode, onAuth }) {
       return;
     }
 
+    if (!recaptchaToken) {
+      setError('Please verify that you are not a robot.');
+      return;
+    }
+
     setLoading(true);
     setError('');
     try {
-      const response = mode === 'login' ? await loginUser(form) : await registerUser(form);
+      const payload = { ...form, recaptchaToken };
+      const response = mode === 'login' ? await loginUser(payload) : await registerUser(payload);
       
       if (mode === 'register') {
         setSuccess(true);
@@ -166,6 +174,17 @@ export default function AuthForm({ mode, onAuth }) {
                 </Link>
               </div>
             )}
+          </div>
+
+            </div>
+          )}
+
+          <div className="flex justify-center py-2">
+            <ReCAPTCHA
+              sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+              onChange={(token) => setRecaptchaToken(token)}
+              theme="dark"
+            />
           </div>
 
           {error && (
