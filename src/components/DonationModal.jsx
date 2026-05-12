@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, CreditCard, Heart, DollarSign, Loader2, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { submitDonation } from '../api';
-import ReCAPTCHA from 'react-google-recaptcha';
+import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 
 export default function DonationModal({ isOpen, onClose, user }) {
   const [step, setStep] = useState(1); // 1: Amount, 2: Payment, 3: Success
@@ -11,7 +11,7 @@ export default function DonationModal({ isOpen, onClose, user }) {
   const [saveCard, setSaveCard] = useState(false);
   const [cardInfo, setCardInfo] = useState({ number: '', expiry: '', cvc: '' });
   const [errors, setErrors] = useState({});
-  const [recaptchaToken, setRecaptchaToken] = useState(null);
+  const { executeRecaptcha } = useGoogleReCaptcha();
 
   useEffect(() => {
     if (user?.savedCard) {
@@ -56,18 +56,20 @@ export default function DonationModal({ isOpen, onClose, user }) {
 
   const handlePayment = async () => {
     if (!validateStep2()) return;
-    if (!recaptchaToken) {
-      setErrors({ ...errors, general: 'Please verify that you are not a robot.' });
-      return;
-    }
     setLoading(true);
     try {
+      if (!executeRecaptcha) {
+        setErrors({ ...errors, general: 'reCAPTCHA not ready. Please try again.' });
+        setLoading(false);
+        return;
+      }
+      const token = await executeRecaptcha('donation');
       await submitDonation({
         ngoId: "654f1234567890abcdef1234", // Placeholder NGO ID
         amount: parseFloat(amount),
         saveCard,
         cardDetails: saveCard ? { number: cardInfo.number, expiry: cardInfo.expiry } : null,
-        recaptchaToken
+        recaptchaToken: token
       });
       setStep(3);
     } catch (err) {
@@ -265,13 +267,7 @@ export default function DonationModal({ isOpen, onClose, user }) {
                     </label>
                   </div>
 
-                  <div className="flex justify-center scale-90">
-                    <ReCAPTCHA
-                      sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
-                      onChange={(token) => setRecaptchaToken(token)}
-                      theme="dark"
-                    />
-                  </div>
+
 
                   <div className="space-y-3">
                     <button 

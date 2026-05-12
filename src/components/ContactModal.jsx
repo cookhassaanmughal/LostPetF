@@ -1,29 +1,30 @@
 import { useState } from 'react';
 import { sendMessage } from '../api';
 import { X } from 'lucide-react';
-import ReCAPTCHA from 'react-google-recaptcha';
+import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 
 export default function ContactModal({ listing, user, onClose }) {
   const [content, setContent] = useState('');
   const [status, setStatus] = useState('idle'); // idle, sending, success, error
   const [errorMsg, setErrorMsg] = useState('');
-  const [recaptchaToken, setRecaptchaToken] = useState(null);
+  const { executeRecaptcha } = useGoogleReCaptcha();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!content.trim()) return;
-    if (!recaptchaToken) {
-      setErrorMsg('Please verify that you are not a robot.');
-      setStatus('error');
-      return;
-    }
     setStatus('sending');
     try {
+      if (!executeRecaptcha) {
+        setErrorMsg('reCAPTCHA not ready. Please try again.');
+        setStatus('error');
+        return;
+      }
+      const token = await executeRecaptcha('contact');
       await sendMessage({
         receiver: listing.owner._id,
         listing: listing._id,
         content,
-        recaptchaToken
+        recaptchaToken: token
       });
       setStatus('success');
     } catch (err) {
@@ -68,13 +69,6 @@ export default function ContactModal({ listing, user, onClose }) {
               className="w-full p-3 resize-none border-slate-200 text-slate-900 focus:border-brand-400 focus:ring-brand-200"
               required
             />
-            
-            <div className="flex justify-center scale-90">
-              <ReCAPTCHA
-                sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
-                onChange={(token) => setRecaptchaToken(token)}
-              />
-            </div>
 
             {status === 'error' && <p className="text-sm text-red-500">{errorMsg}</p>}
             <div className="flex gap-3 justify-end">

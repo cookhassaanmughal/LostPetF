@@ -3,14 +3,14 @@ import { loginUser, registerUser } from '../api';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, User as UserIcon, ArrowRight, Loader2, Info } from 'lucide-react';
 import { motion } from 'framer-motion';
-import ReCAPTCHA from 'react-google-recaptcha';
+import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 
 export default function AuthForm({ mode, onAuth }) {
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [recaptchaToken, setRecaptchaToken] = useState(null);
+  const { executeRecaptcha } = useGoogleReCaptcha();
   const navigate = useNavigate();
 
   const [errors, setErrors] = useState({});
@@ -41,20 +41,17 @@ export default function AuthForm({ mode, onAuth }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const validationErrors = validate();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
-
-    if (!recaptchaToken) {
-      setError('Please verify that you are not a robot.');
-      return;
-    }
-
     setLoading(true);
     setError('');
     try {
-      const payload = { ...form, recaptchaToken };
+      if (!executeRecaptcha) {
+        setError('reCAPTCHA not ready. Please try again.');
+        setLoading(false);
+        return;
+      }
+
+      const token = await executeRecaptcha(mode === 'login' ? 'login' : 'register');
+      const payload = { ...form, recaptchaToken: token };
       const response = mode === 'login' ? await loginUser(payload) : await registerUser(payload);
       
       if (mode === 'register') {
@@ -176,13 +173,7 @@ export default function AuthForm({ mode, onAuth }) {
             )}
           </div>
 
-          <div className="flex justify-center py-2">
-            <ReCAPTCHA
-              sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
-              onChange={(token) => setRecaptchaToken(token)}
-              theme="dark"
-            />
-          </div>
+
 
           {error && (
             <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-3 text-red-400 text-sm animate-shake">

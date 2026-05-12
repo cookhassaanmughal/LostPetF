@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { submitVerification, fetchVerificationStatus } from '../api';
 import { ShieldCheck, Info, CheckCircle2, Clock, AlertTriangle, Building, Globe, Mail, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import ReCAPTCHA from 'react-google-recaptcha';
+import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 
 export default function NGOVerification({ user }) {
   const [status, setStatus] = useState(null);
@@ -15,7 +15,7 @@ export default function NGOVerification({ user }) {
     website: '',
   });
   const [error, setError] = useState('');
-  const [recaptchaToken, setRecaptchaToken] = useState(null);
+  const { executeRecaptcha } = useGoogleReCaptcha();
 
   useEffect(() => {
     const load = async () => {
@@ -55,14 +55,16 @@ export default function NGOVerification({ user }) {
     setError('');
     
     if (!validateForm()) return;
-    if (!recaptchaToken) {
-      setError('Please verify that you are not a robot.');
-      return;
-    }
 
     setSubmitting(true);
     try {
-      const res = await submitVerification({ ...form, recaptchaToken });
+      if (!executeRecaptcha) {
+        setError('reCAPTCHA not ready. Please try again.');
+        setSubmitting(false);
+        return;
+      }
+      const token = await executeRecaptcha('ngo_verify');
+      const res = await submitVerification({ ...form, recaptchaToken: token });
       setStatus(res.data);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to submit verification request.');
@@ -198,12 +200,7 @@ export default function NGOVerification({ user }) {
                 </div>
               </div>
 
-              <div className="flex justify-center scale-90">
-                <ReCAPTCHA
-                  sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
-                  onChange={(token) => setRecaptchaToken(token)}
-                />
-              </div>
+
 
               <button 
                 type="submit" 
