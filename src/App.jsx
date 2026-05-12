@@ -13,6 +13,7 @@ import Favorites from './components/Favorites';
 import MyDonations from './components/MyDonations';
 import UserLayout from './components/UserLayout';
 import Navbar from './components/Navbar';
+import VerifyEmail from './components/VerifyEmail';
 import { useLocation as useLocationRouter, Navigate } from 'react-router-dom';
 
 const UserPageRoute = ({ element, user, onLogout }) => {
@@ -71,6 +72,7 @@ function App() {
           <Route path="/support" element={<SupportNGOs user={currentUser} />} />
           <Route path="/login" element={<AuthForm mode="login" onAuth={setCurrentUser} />} />
           <Route path="/register" element={<AuthForm mode="register" onAuth={setCurrentUser} />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/dashboard" element={<UserPageRoute user={currentUser} onLogout={logout} element={<Dashboard user={currentUser} />} />} />
           <Route path="/profile" element={<UserPageRoute user={currentUser} onLogout={logout} element={<Profile user={currentUser} onUpdate={setCurrentUser} />} />} />
           <Route path="/favorites" element={<UserPageRoute user={currentUser} onLogout={logout} element={<Favorites user={currentUser} />} />} />

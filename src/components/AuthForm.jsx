@@ -8,6 +8,7 @@ export default function AuthForm({ mode, onAuth }) {
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
 
   const [errors, setErrors] = useState({});
@@ -47,6 +48,12 @@ export default function AuthForm({ mode, onAuth }) {
     setError('');
     try {
       const response = mode === 'login' ? await loginUser(form) : await registerUser(form);
+      
+      if (mode === 'register') {
+        setSuccess(true);
+        return;
+      }
+
       localStorage.setItem('pet-app-token', response.data.token);
       onAuth(response.data.user);
       navigate('/dashboard');
@@ -75,7 +82,30 @@ export default function AuthForm({ mode, onAuth }) {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        {success ? (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center py-8"
+          >
+            <div className="w-20 h-20 bg-brand-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Mail className="w-10 h-10 text-brand-400" />
+            </div>
+            <h3 className="text-2xl font-bold text-white mb-4">Check your email</h3>
+            <p className="text-slate-400 mb-8">
+              We've sent a verification link to <span className="text-white font-bold">{form.email}</span>. 
+              Please click the link to activate your account.
+            </p>
+            <Link 
+              to="/login" 
+              className="inline-flex items-center gap-2 text-brand-400 font-bold hover:underline"
+              onClick={() => setSuccess(false)}
+            >
+              Back to Login <ArrowRight className="w-4 h-4" />
+            </Link>
+          </motion.div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-5">
           {mode === 'register' && (
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Full Name</label>
@@ -147,6 +177,7 @@ export default function AuthForm({ mode, onAuth }) {
             {!loading && <ArrowRight className="w-4 h-4" />}
           </button>
         </form>
+        )}
 
         <div className="mt-8 pt-8 border-t border-slate-800 text-center">
           <p className="text-slate-500 text-sm">
