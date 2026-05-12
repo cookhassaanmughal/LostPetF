@@ -3,21 +3,24 @@ import { forgotPassword } from '../api';
 import { Mail, ArrowRight, Loader2, Info, CheckCircle2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import ReCAPTCHA from 'react-google-recaptcha';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [recaptchaToken, setRecaptchaToken] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email) return setError('Email is required');
+    if (!recaptchaToken) return setError('Please verify that you are not a robot.');
     
     setLoading(true);
     setError('');
     try {
-      await forgotPassword({ email });
+      await forgotPassword({ email, recaptchaToken });
       setSuccess(true);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to send reset link.');
@@ -69,6 +72,14 @@ export default function ForgotPassword() {
                   className="w-full bg-white border-2 border-slate-100 rounded-xl py-3.5 pl-11 pr-4 text-slate-900 focus:ring-4 focus:ring-brand-500/20 focus:border-brand-500 transition-all outline-none" 
                 />
               </div>
+            </div>
+
+            <div className="flex justify-center">
+              <ReCAPTCHA
+                sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+                onChange={(token) => setRecaptchaToken(token)}
+                theme="dark"
+              />
             </div>
 
             {error && (
